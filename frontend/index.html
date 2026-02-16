@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeAssist — AI Coding Agent</title>
+    <!-- <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script> -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="atom.css">
+    <script src="tailwind.js"></script>
+    <script src="vue.js"></script>
+    <script src="marked.js"></script>
+    <script src="highlight.js"></script>
+
+    <style>
+        :root {
+            --bg-void:    #000000;
+            --bg-deep:    #050505;
+            --bg-surface: #0a0a0a;
+            --bg-raised:  #111111;
+            --bg-hover:   #161616;
+            --border:     #1e1e1e;
+            --border-hi:  #2e2e2e;
+            --text-primary:  #f0f0f0;
+            --text-muted:    #606060;
+            --text-dim:      #404040;
+            --accent:        #3ddc84;
+            --accent-dim:    #1a4a2e;
+            --danger:        #e05252;
+            --warning:       #e0a84a;
+            --info:          #4a9fe0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg-void);
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* ── Scrollbars ── */
+        ::-webkit-scrollbar       { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #404040; }
+
+        /* ── Auth Screen ── */
+        .auth-bg {
+            background: var(--bg-void);
+            background-image:
+                radial-gradient(circle at 20% 50%, rgba(61,220,132,0.03) 0%, transparent 60%),
+                radial-gradient(circle at 80% 20%, rgba(74,159,224,0.03) 0%, transparent 50%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 420px;
+            padding: 2rem;
+        }
+
+        .auth-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .logo-icon {
+            width: 32px; height: 32px;
+            background: var(--accent);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            color: #000;
+        }
+
+        .logo-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-sub {
+            font-size: 10px;
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .tab-row {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+            gap: 0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 12px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: color 0.15s, border-color 0.15s;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .tab-btn.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .form-label {
+            display: block;
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.4rem;
+        }
+
+        .form-input {
+            width: 100%;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.65rem 0.85rem;
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .form-input:focus {
+            border-color: var(--border-hi);
+        }
+
+        .form-group { margin-bottom: 1rem; }
+
+        .btn-primary {
+            width: 100%;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 0.75rem 1rem;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+
+        .btn-primary:hover:not(:disabled) { opacity: 0.85; }
+        .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .btn-ghost {
+            width: 100%;
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            padding: 0.65rem 1rem;
+            font-family: inherit;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+        .error-box {
+            background: rgba(224,82,82,0.08);
+            border: 1px solid rgba(224,82,82,0.25);
+            color: var(--danger);
+            padding: 0.65rem 0.85rem;
+            font-size: 12px;
+            margin-top: 1rem;
+        }
+
+        .api-key-reveal {
+            background: var(--bg-raised);
+            border: 1px solid var(--accent-dim);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .api-key-reveal .key-val {
+            font-size: 11px;
+            color: var(--accent);
+            word-break: break-all;
+            margin-top: 0.25rem;
+        }
+
+        /* ── Main Layout ── */
+        .app-layout {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 240px;
+            min-width: 240px;
+            background: var(--bg-deep);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sidebar-logo-icon {
+            width: 24px; height: 24px;
+            background: var(--accent);
+            color: #000;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .sidebar-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .user-pill {
+            margin: 0.75rem 0.75rem 0;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-dot {
+            width: 6px; height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+        }
+
+        .user-name {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .new-session-btn {
+            margin: 0.75rem;
+            padding: 0.6rem 0.75rem;
+            background: var(--accent-dim);
+            border: 1px solid rgba(61,220,132,0.2);
+            color: var(--accent);
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.15s;
+        }
+
+        .new-session-btn:hover { background: rgba(61,220,132,0.12); }
+        .new-session-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .session-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .session-item {
+            padding: 0.65rem 0.75rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+            margin-bottom: 2px;
+            transition: background 0.1s, border-color 0.1s;
+        }
+
+        .session-item:hover {
+            background: var(--bg-hover);
+            border-color: var(--border);
+        }
+
+        .session-item.active {
+            background: var(--bg-raised);
+            border-color: var(--border-hi);
+        }
+
+        .session-name {
+            font-size: 12px;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .session-meta {
+            font-size: 10px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .sidebar-footer {
+            padding: 0.75rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .logout-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+        /* ── Chat Area ── */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-void);
+        }
+
+        .chat-header {
+            height: 48px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.25rem;
+            background: var(--bg-deep);
+        }
+
+        .chat-title {
+            font-size: 13px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header-badge {
+            font-size: 10px;
+            color: var(--accent);
+            background: var(--accent-dim);
+            padding: 0.2rem 0.5rem;
+            border: 1px solid rgba(61,220,132,0.2);
+        }
+
+        .delete-btn {
+            font-size: 11px;
+            padding: 0.3rem 0.65rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color 0.15s, color 0.15s;
+        }
+
+        .delete-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+        /* ── Messages ── */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        .messages-inner {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            color: var(--text-dim);
+        }
+
+        .empty-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            opacity: 0.4;
+        }
+
+        .empty-title { font-size: 13px; margin-bottom: 0.25rem; }
+        .empty-sub { font-size: 11px; }
+
+        .message {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+            animation: msgIn 0.2s ease-out both;
+        }
+
+        @keyframes msgIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg-avatar {
+            width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .msg-avatar.user-av {
+            background: var(--bg-raised);
+            border: 1px solid var(--border-hi);
+            color: var(--text-muted);
+        }
+
+        .msg-avatar.ai-av {
+            background: var(--accent-dim);
+            border: 1px solid rgba(61,220,132,0.2);
+            color: var(--accent);
+        }
+
+        .msg-body { flex: 1; min-width: 0; overflow-x: auto; }
+
+        .msg-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.4rem;
+        }
+
+        .msg-content {
+            font-size: 13px;
+            color: var(--text-primary);
+            line-height: 1.65;
+            overflow-x: auto;
+        }
+
+        /* User messages – plain text */
+        .user-content {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            padding: 0.75rem 1rem;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        /* ── Markdown inside assistant messages ── */
+        .markdown-content {
+            overflow-x: auto;
+        }
+        .markdown-content p { margin: 0.5em 0; }
+        .markdown-content p:first-child { margin-top: 0; }
+
+        .markdown-content h1,
+        .markdown-content h2,
+        .markdown-content h3 {
+            font-weight: 600;
+            margin: 1em 0 0.4em;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .markdown-content h1 { font-size: 1.25em; }
+        .markdown-content h2 { font-size: 1.1em; }
+        .markdown-content h3 { font-size: 1em; color: var(--accent); }
+
+        .markdown-content ul, .markdown-content ol {
+            padding-left: 1.4em;
+            margin: 0.5em 0;
+        }
+
+        .markdown-content li { margin: 0.2em 0; }
+
+        .markdown-content code:not(pre code) {
+            background: var(--bg-raised);
+            border: 1px solid var(--border-hi);
+            padding: 0.1em 0.4em;
+            font-size: 0.9em;
+            color: #e06c75;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .markdown-content a { color: var(--info); text-decoration: underline; }
+
+        .markdown-content blockquote {
+            border-left: 2px solid var(--border-hi);
+            padding-left: 1em;
+            color: var(--text-muted);
+            margin: 0.5em 0;
+        }
+
+        .markdown-content table { border-collapse: collapse; width: 100%; margin: 0.75em 0; }
+        .markdown-content th, .markdown-content td {
+            border: 1px solid var(--border);
+            padding: 0.4em 0.75em;
+            font-size: 12px;
+        }
+        .markdown-content th { background: var(--bg-raised); color: var(--text-muted); }
+
+        /* ── Code blocks ── */
+        .markdown-content pre {
+            position: relative;
+            margin: 0.75em 0;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            border-radius: 0;
+        }
+
+        .code-lang-tag {
+            position: absolute;
+            top: 0; left: 0;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            background: rgba(0,0,0,0.5);
+            padding: 0.2rem 0.5rem;
+            border-bottom: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+        }
+
+        .markdown-content pre code.hljs {
+            display: block;
+            padding: 2em 1em 1em;
+            font-size: 12px;
+            line-height: 1.55;
+            overflow-x: auto;
+            padding-right: 5rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ── Copy button ── */
+        .copy-btn {
+            position: absolute;
+            top: 0.35rem;
+            right: 0.35rem;
+            background: var(--bg-raised);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            padding: 0.2rem 0.55rem;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+            z-index: 10;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .copy-btn:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border-hi); }
+        .copy-btn.copied { background: var(--accent-dim); color: var(--accent); border-color: rgba(61,220,132,0.3); }
+
+        /* ── Streaming cursor ── */
+        .stream-cursor {
+            display: inline-block;
+            width: 8px; height: 14px;
+            background: var(--accent);
+            margin-left: 2px;
+            vertical-align: text-bottom;
+            animation: blink 0.6s step-end infinite;
+            opacity: 0.7;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 0; }
+        }
+
+        /* ── Input area ── */
+        .input-zone {
+            border-top: 1px solid var(--border);
+            background: var(--bg-deep);
+            padding: 1rem 1.25rem;
+        }
+
+        .input-inner { max-width: 860px; margin: 0 auto; }
+
+        .file-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 0.65rem;
+        }
+
+        .file-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            padding: 0.2rem 0.55rem;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .file-chip-remove {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 12px;
+            padding: 0;
+            line-height: 1;
+            transition: color 0.1s;
+        }
+
+        .file-chip-remove:hover { color: var(--danger); }
+
+        .upload-notice {
+            font-size: 11px;
+            color: var(--accent);
+            margin-bottom: 0.65rem;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .upload-notice.error { color: var(--danger); }
+
+        .input-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.5rem;
+        }
+
+        .chat-textarea {
+            flex: 1;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            font-family: inherit;
+            font-size: 13px;
+            resize: none;
+            min-height: 44px;
+            max-height: 200px;
+            outline: none;
+            line-height: 1.5;
+            transition: border-color 0.15s;
+        }
+
+        .chat-textarea:focus { border-color: var(--border-hi); }
+        .chat-textarea::placeholder { color: var(--text-dim); }
+        .chat-textarea:disabled { opacity: 0.5; }
+
+        .icon-btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.65rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+            min-width: 44px; height: 44px;
+        }
+
+        .icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border-hi); }
+        .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .send-btn {
+            background: var(--accent);
+            border: 1px solid var(--accent);
+            color: #000;
+            padding: 0 1.25rem;
+            height: 44px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            cursor: pointer;
+            transition: opacity 0.15s;
+            white-space: nowrap;
+        }
+
+        .send-btn:hover:not(:disabled) { opacity: 0.85; }
+        .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .hint-bar {
+            margin-top: 0.5rem;
+            font-size: 10px;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .hint-key {
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            padding: 0.1rem 0.35rem;
+            font-size: 9px;
+        }
+
+        /* ── Thinking indicator ── */
+        .thinking {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--text-muted);
+            font-size: 11px;
+            margin-bottom: 1.25rem;
+        }
+
+        .thinking-dots span {
+            display: inline-block;
+            width: 4px; height: 4px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+
+        .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes pulse {
+            0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+            40% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Code language tag */
+        .code-lang-tag {
+            position: absolute;
+            top: 0.5rem;
+            right: 4rem;
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-family: 'JetBrains Mono', monospace;
+            z-index: 10;
+        }
+
+        /* Ensure markdown headings are bold */
+        .markdown-content h1,
+        .markdown-content h2,
+        .markdown-content h3,
+        .markdown-content h4,
+        .markdown-content h5,
+        .markdown-content h6 {
+            font-weight: 700;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+        }
+
+        .markdown-content h1 { font-size: 1.5em; }
+        .markdown-content h2 { font-size: 1.3em; }
+        .markdown-content h3 { font-size: 1.1em; }
+
+        /* Ensure bold and italic work */
+        .markdown-content strong { font-weight: 700; }
+        .markdown-content em { font-style: italic; }
+
+        /* Lists styling */
+        .markdown-content ul,
+        .markdown-content ol {
+            margin: 0.5em 0;
+            padding-left: 2em;
+        }
+
+        .markdown-content li {
+            margin: 0.25em 0;
+        }
+
+        /* Copy button for code blocks */
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.35rem 0.75rem;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            z-index: 10;
+        }
+
+        .copy-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-color: var(--border-hi);
+        }
+
+        .copy-btn.copied {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* Stream cursor animation */
+        .stream-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 1em;
+            background: var(--accent);
+            margin-left: 2px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+
+    <!-- ════════════════════════════════════════
+         AUTH SCREEN
+    ═════════════════════════════════════════ -->
+    <div v-if="!isAuthenticated" class="auth-bg">
+        <div style="width:100%;max-width:420px;padding:1rem;">
+
+            <div class="auth-card">
+                <!-- Logo -->
+                <div class="auth-logo">
+                    <div class="logo-icon">CA</div>
+                    <div>
+                        <div class="logo-text">CodeAssist</div>
+                        <div class="logo-sub">AI Coding Agent</div>
+                    </div>
+                </div>
+
+                <!-- API Key reveal modal -->
+                <div v-if="showApiKeyModal">
+                    <div style="font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem;">
+                        ✓ Account Created
+                    </div>
+                    <p style="font-size:12px;color:var(--text-muted);margin-bottom:1rem;line-height:1.6;">
+                        Save your API key below — <strong style="color:var(--warning)">this is the only time it will be shown.</strong>
+                    </p>
+                    <div class="api-key-reveal">
+                        <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;">Username</div>
+                        <div style="font-size:13px;margin:0.2rem 0 0.75rem;">{{ createdAccount.username }}</div>
+                        <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;">API Key</div>
+                        <div class="key-val">{{ createdAccount.apiKey }}</div>
+                    </div>
+                    <button @click="copyApiKey" class="btn-primary" style="margin-bottom:0.5rem;">
+                        {{ copyButtonText }}
+                    </button>
+                    <button @click="closeApiKeyModal" class="btn-ghost">Continue to Login</button>
+                </div>
+
+                <!-- Tabs: Login / Register -->
+                <div v-else>
+                    <div class="tab-row">
+                        <button :class="['tab-btn', !showSignupForm ? 'active' : '']"
+                                @click="showSignupForm = false">Login</button>
+                        <button :class="['tab-btn', showSignupForm ? 'active' : '']"
+                                @click="showSignupForm = true">Register</button>
+                    </div>
+
+                    <!-- Login Form -->
+                    <form v-if="!showSignupForm" @submit.prevent="handleLogin">
+                        <div class="form-group">
+                            <label class="form-label">Username</label>
+                            <input type="text" v-model="loginForm.username" required
+                                   class="form-input" placeholder="your_username" autocomplete="username">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">API Key</label>
+                            <input type="password" v-model="loginForm.apiKey" required
+                                   class="form-input" placeholder="••••••••••••••••••••••••••••••••"
+                                   autocomplete="current-password">
+                        </div>
+                        <button type="submit" :disabled="isLoading" class="btn-primary">
+                            {{ isLoading ? 'Authenticating…' : 'Sign In' }}
+                        </button>
+                    </form>
+
+                    <!-- Register Form -->
+                    <form v-else @submit.prevent="handleSignup">
+                        <div class="form-group">
+                            <label class="form-label">Choose a Username</label>
+                            <input type="text" v-model="signupForm.username" required
+                                   class="form-input" placeholder="your_username" autocomplete="username">
+                        </div>
+                        <p style="font-size:11px;color:var(--text-muted);margin-bottom:1rem;line-height:1.6;">
+                            A unique API key will be generated for you to log in.
+                        </p>
+                        <button type="submit" :disabled="isLoading" class="btn-primary">
+                            {{ isLoading ? 'Creating Account…' : 'Create Account' }}
+                        </button>
+                    </form>
+                </div>
+
+                <div v-if="errorMessage" class="error-box">{{ errorMessage }}</div>
+            </div>
+
+            <p style="text-align:center;font-size:10px;color:var(--text-dim);margin-top:1rem;">
+                Powered by Ollama · qwen2.5-coder:1.5b · LlamaIndex
+            </p>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         MAIN APP
+    ═════════════════════════════════════════ -->
+    <div v-else class="app-layout">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo-icon">CA</div>
+                <span class="sidebar-title">CodeAssist</span>
+            </div>
+
+            <div class="user-pill">
+                <div class="user-dot"></div>
+                <span class="user-name">{{ currentUser.username }}</span>
+            </div>
+
+            <button @click="createNewSession" :disabled="isLoading" class="new-session-btn">
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor">
+                    <path d="M6 1v10M1 6h10"/>
+                    <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M6 1v10M1 6h10"/>
+                </svg>
+                New Session
+            </button>
+
+            <div class="session-list">
+                <div v-if="sessions.length === 0"
+                     style="padding:0.75rem;font-size:11px;color:var(--text-dim);">
+                    No sessions yet
+                </div>
+                <div v-for="session in sessions" :key="session.id"
+                     :class="['session-item', currentSession.sessionId === session.id ? 'active' : '']"
+                     @click="selectSession(session)">
+                    <div class="session-name">{{ session.name }}</div>
+                    <div class="session-meta">{{ formatSessionDate(session.updated_at) }}</div>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <button @click="handleLogout" class="logout-btn">Sign Out</button>
+            </div>
+        </aside>
+
+        <!-- Main chat -->
+        <main class="chat-area">
+
+            <!-- Header -->
+            <header class="chat-header">
+                <div class="chat-title">
+                    {{ currentSession.sessionName || 'Select or create a session' }}
+                </div>
+                <div class="header-actions">
+                    <span v-if="currentSession.sessionId" class="header-badge">
+                        {{ uploadedFiles.length }} file{{ uploadedFiles.length !== 1 ? 's' : '' }}
+                    </span>
+                    <button v-if="currentSession.sessionId" @click="deleteCurrentSession"
+                            class="delete-btn">
+                        Delete
+                    </button>
+                </div>
+            </header>
+
+            <!-- Messages -->
+            <div class="messages-container" ref="messagesContainer">
+                <!-- Empty state -->
+                <div v-if="!currentSession.sessionId" class="empty-state">
+                    <div class="empty-icon">⌨</div>
+                    <div class="empty-title">No session selected</div>
+                    <div class="empty-sub">Create a new session to start coding with your AI assistant</div>
+                </div>
+
+                <div v-else class="messages-inner">
+
+                    <!-- Message list -->
+                    <div v-for="(message, index) in messages" :key="index" class="message">
+                        <div :class="['msg-avatar', message.role === 'user' ? 'user-av' : 'ai-av']">
+                            {{ message.role === 'user' ? currentUser.username.slice(0,2).toUpperCase() : 'AI' }}
+                        </div>
+                        <div class="msg-body">
+                            <div class="msg-label">
+                                {{ message.role === 'user' ? currentUser.username : 'CodeAssist' }}
+                                <span v-if="message.streaming" style="color:var(--text-dim);font-size:9px;margin-left:0.5rem;">
+                                    generating
+                                </span>
+                            </div>
+                            <div v-if="message.role === 'user'" class="msg-content user-content">{{ message.content }}</div>
+                            <div v-else class="msg-content markdown-content"
+                                 v-html="formatMessage(message.content, message.streaming)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thinking indicator -->
+                    <div v-if="isThinking" class="thinking">
+                        <div class="msg-avatar ai-av">AI</div>
+                        <div class="thinking-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <span>Thinking…</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input zone -->
+            <div v-if="currentSession.sessionId" class="input-zone">
+                <div class="input-inner">
+
+                    <!-- Upload notice -->
+                    <div v-if="uploadStatus"
+                         :class="['upload-notice', uploadStatus.startsWith('✗') ? 'error' : '']">
+                        {{ uploadStatus }}
+                    </div>
+
+                    <!-- File chips -->
+                    <div v-if="uploadedFiles.length > 0" class="file-strip">
+                        <div v-for="file in uploadedFiles" :key="file.filename" class="file-chip">
+                            <span>📄</span>
+                            <span>{{ file.filename }}</span>
+                            <button class="file-chip-remove" @click="removeFile(file.filename)"
+                                    title="Remove file">×</button>
+                        </div>
+                    </div>
+
+                    <div class="input-row">
+                        <!-- Textarea -->
+                        <textarea
+                            v-model="messageInput"
+                            @keydown="handleKeydown"
+                            placeholder="Ask anything about code… (Enter to send, Shift+Enter for newline)"
+                            rows="1"
+                            :disabled="isLoadingResponse"
+                            class="chat-textarea"
+                            @input="autoGrow"
+                            ref="chatTextarea"
+                        ></textarea>
+
+                        <!-- Attach -->
+                        <label class="icon-btn" title="Attach code file" :style="isLoadingResponse ? 'pointer-events:none;opacity:0.4':''">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                      d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                            </svg>
+                            <input type="file" class="hidden" style="display:none" @change="handleFileSelect"
+                                   accept=".py,.js,.ts,.jsx,.tsx,.java,.cpp,.c,.h,.cs,.html,.css,.scss,.json,.xml,.yaml,.yml,.toml,.txt,.md,.sh,.sql,.go,.rs,.rb,.php,.swift,.kt,.vue,.svelte,.r,.m,.f90,.lua,.pl,.ex,.exs"
+                                   :disabled="isLoadingResponse">
+                        </label>
+
+                        <!-- Stop / Retry -->
+                        <button v-if="isLoadingResponse"
+                                @click="stopGeneration"
+                                class="icon-btn"
+                                title="Stop generating">
+                            Stop
+                        </button>
+                        <button v-else
+                                @click="retryLastMessage"
+                                :disabled="!lastUserMessage"
+                                class="icon-btn"
+                                title="Retry last message">
+                            Retry
+                        </button>
+
+                        <!-- Send -->
+                        <button @click="sendMessage"
+                                :disabled="!messageInput.trim() || isLoadingResponse"
+                                class="send-btn">
+                            {{ isLoadingResponse ? '⏸' : 'Send' }}
+                        </button>
+                    </div>
+
+                    <div class="hint-bar">
+                        <span><span class="hint-key">Enter</span> send</span>
+                        <span><span class="hint-key">Shift+Enter</span> newline</span>
+                        <span style="margin-left:auto;color:var(--text-dim);">
+                            qwen2.5-coder:1.5b · ollama
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+</div>
+
+<script>
+    // Configure marked with better error handling
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof marked !== 'undefined' && typeof hljs !== 'undefined') {
+            const renderer = new marked.Renderer();
+            
+            // Custom code block renderer with syntax highlighting
+            renderer.code = function(code, lang, escaped) {
+                // Handle both old (string) and new (object) marked.js API
+                let codeString, language;
+                
+                if (typeof code === 'object' && code !== null) {
+                    // New API: code is a token object
+                    codeString = code.text || '';
+                    language = code.lang || 'plaintext';
+                } else {
+                    // Old API: code is a string
+                    codeString = String(code || '');
+                    language = lang || 'plaintext';
+                }
+                
+                let highlighted;
+                
+                try {
+                    if (hljs.getLanguage(language)) {
+                        highlighted = hljs.highlight(codeString, { language }).value;
+                    } else {
+                        highlighted = hljs.highlightAuto(codeString).value;
+                    }
+                } catch(e) {
+                    console.error('Highlight error:', e);
+                    // Fallback to escaped plain text if highlighting fails
+                    highlighted = codeString
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+                }
+                return `<pre><span class="code-lang-tag">${language}</span><code class="hljs language-${language}">${highlighted}</code></pre>`;
+            };
+
+            // Configure marked options
+            marked.setOptions({ 
+                breaks: true, 
+                gfm: true, 
+                renderer: renderer,
+                headerIds: false,
+                mangle: false
+            });
+            
+            console.log('Marked.js configured successfully');
+        } else {
+            console.error('marked or hljs not loaded');
+        }
+    });
+</script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+services:
+  # PostgreSQL Database Container
+  postgres:
+    image: postgres:latest
+    container_name: codeassist-postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./postgres_data:/var/lib/postgresql
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    networks:
+      - codeassist-network
+    
+
+  # CodeAssist Application Container
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: codeassist-app
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    volumes:
+      - ./uploads:/app/uploads
+      - ./frontend:/app/frontend
+    ports:
+      - "${APP_PORT:-8000}:8000"
+      - "${FRONTEND_PORT:-8001}:8001"
+    networks:
+      - codeassist-network
+    extra_hosts:
+      # Allow container to access host's Ollama
+      - "host.docker.internal:host-gateway"
+
+networks:
+  codeassist-network:
+    driver: bridge
+
